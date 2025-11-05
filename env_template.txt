@@ -1,4 +1,16 @@
 # .env dosyası için template
-# Bu dosyayı .env olarak kaydedin ve API key'inizi girin
+# Bu dosyayı .env olarak kaydedin ve değerleri girin
 
+# OpenAI API Key
 OPENAI_API_KEY=your_openai_api_key_here
+
+# Port (optional, defaults to 5000)
+PORT=5000
+
+# PLM OAuth Credentials
+PLM_CLIENT_ID=your_plm_client_id
+PLM_CLIENT_SECRET=your_plm_client_secret
+PLM_USERNAME=your_plm_username
+PLM_PASSWORD=your_plm_password
+PLM_TOKEN_URL=https://mingle-sso.eu1.inforcloudsuite.com:443/YOUR_TENANT/as/token.oauth2
+PLM_API_URL=https://mingle-ionapi.eu1.inforcloudsuite.com/YOUR_TENANT/FASHIONPLM/pdm/api/pdm/material/v2/save
