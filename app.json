@@ -17,9 +17,10 @@
   "image": "heroku/nodejs",
   "buildpacks": [
     {
-      "url": "heroku/nodejs"
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs"
     }
   ],
+  "stack": "heroku-24",
   "env": {
     "OPENAI_API_KEY": {
       "description": "OpenAI API Key for ChatGPT Vision",
