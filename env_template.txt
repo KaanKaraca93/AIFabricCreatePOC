@@ -1,0 +1,4 @@
+# .env dosyası için template
+# Bu dosyayı .env olarak kaydedin ve API key'inizi girin
+
+OPENAI_API_KEY=your_openai_api_key_here

@@ -1,0 +1,361 @@
+openapi: 3.0.0
+info:
+  title: AI Fabric Analysis & PLM Integration API
+  description: |
+    ChatGPT Vision ile kumaş etiket görsellerini analiz edip PLM'de otomatik kumaş kodu açan API.
+    
+    **Akış:**
+    1. PLM'den görsel URL alınır
+    2. ChatGPT ile görsel analiz edilir
+    3. Elyaf mapping yapılır
+    4. PLM'de kumaş kodu açılır
+    
+    **Özellikler:**
+    - ✅ ChatGPT GPT-4o Vision entegrasyonu
+    - ✅ 9 farklı elyaf tipi, 40+ kod varyasyonu
+    - ✅ Dinamik elyaf desteği (1-5 elyaf)
+    - ✅ OAuth 2.0 token yönetimi
+    - ✅ Infor Fashion PLM entegrasyonu
+    - ✅ ION API formatı
+    
+  version: 1.0.0
+  contact:
+    email: kaan.karaca93@gmail.com
+  license:
+    name: MIT
+
+servers:
+  - url: https://your-app.herokuapp.com
+    description: Production server (Heroku)
+  - url: http://localhost:5000
+    description: Development server
+
+tags:
+  - name: Health
+    description: API sağlık kontrolü
+  - name: Analysis
+    description: Görsel analizi
+  - name: Full Flow
+    description: Analiz + PLM kumaş açma
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: API sağlık kontrolü
+      description: API'nin çalışıp çalışmadığını kontrol eder
+      responses:
+        '200':
+          description: API çalışıyor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  message:
+                    type: string
+                    example: Kumaş Analiz API çalışıyor
+
+  /analyze:
+    post:
+      tags:
+        - Analysis
+      summary: Kumaş görselini analiz et
+      description: |
+        PLM görsel URL'ini alır, ChatGPT ile analiz eder ve PLM formatında sonuç döner.
+        
+        **Çıktı:** Tedarikçi, Kod, Gramaj, En, Elyaf bilgileri (Id, Code, Name, Yüzde)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image_url
+              properties:
+                image_url:
+                  type: string
+                  format: uri
+                  description: PLM'den gelen kumaş etiket görseli URL'i
+                  example: https://idm.eu1.inforcloudsuite.com/ca/api/resources/FPLM_Document-89057-2-LATEST?$token=...&$tenant=...
+                document_id:
+                  type: string
+                  description: PLM doküman ID (opsiyonel)
+                  example: FPLM_Document-89057
+                request_id:
+                  type: string
+                  description: İstek takip ID (opsiyonel)
+                  example: req-12345
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: İstek zamanı (opsiyonel)
+                  example: 2025-11-05T23:27:19Z
+      responses:
+        '200':
+          description: Analiz başarılı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'
+        '400':
+          description: Geçersiz istek
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analyze-and-create:
+    post:
+      tags:
+        - Full Flow
+      summary: Analiz + PLM'de kumaş kodu aç
+      description: |
+        **TAM AKIŞ:** Görsel analizi + PLM'de otomatik kumaş kodu açma
+        
+        **Adımlar:**
+        1. 📸 Görsel analizi (ChatGPT)
+        2. 🧬 Elyaf mapping
+        3. 🔑 OAuth token alma
+        4. 🏭 PLM API'ye POST
+        5. ✅ Kumaş kodu açıldı
+        
+        **Not:** `create_in_plm: false` ile sadece analiz yapılabilir.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image_url
+              properties:
+                image_url:
+                  type: string
+                  format: uri
+                  description: PLM'den gelen kumaş etiket görseli URL'i
+                  example: https://idm.eu1.inforcloudsuite.com/ca/api/resources/FPLM_Document-89057-2-LATEST?$token=...&$tenant=...
+                document_id:
+                  type: string
+                  description: PLM doküman ID (opsiyonel)
+                  example: FPLM_Document-89057
+                request_id:
+                  type: string
+                  description: İstek takip ID (opsiyonel)
+                  example: req-12345
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: İstek zamanı (opsiyonel)
+                  example: 2025-11-05T23:27:19Z
+                create_in_plm:
+                  type: boolean
+                  description: PLM'de kumaş kodu açılsın mı? (default: true)
+                  example: true
+                  default: true
+      responses:
+        '200':
+          description: Tam akış başarılı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullFlowResponse'
+        '400':
+          description: Geçersiz istek
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    AnalysisResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            Tedarikcisi:
+              type: string
+              example: NISH KUMAŞ SAN. VE TİC. LTD. ŞTİ.
+            Tedarikci_Kodu:
+              type: string
+              example: NK1178
+            Gramaj:
+              type: integer
+              example: 210
+            En:
+              type: integer
+              example: 190
+            Elyaf1Yuzde:
+              type: integer
+              example: 79
+            Elyaf1:
+              type: string
+              example: Polyester
+            Elyaf1Id:
+              type: integer
+              example: 13
+            Elyaf1Code:
+              type: string
+              example: PES
+            Elyaf2Yuzde:
+              type: integer
+              example: 21
+            Elyaf2:
+              type: string
+              example: Pamuk
+            Elyaf2Id:
+              type: integer
+              example: 9
+            Elyaf2Code:
+              type: string
+              example: COT
+        raw_chatgpt_response:
+          type: object
+          description: ChatGPT'nin ham cevabı (debug için)
+        metadata:
+          type: object
+          properties:
+            document_id:
+              type: string
+              nullable: true
+            request_id:
+              type: string
+              nullable: true
+            timestamp:
+              type: string
+              format: date-time
+            processing_time_ms:
+              type: integer
+              example: 2345
+
+    FullFlowResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        analysis:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: '#/components/schemas/FabricData'
+            raw_chatgpt_response:
+              type: object
+        plm_creation:
+          type: object
+          nullable: true
+          properties:
+            success:
+              type: boolean
+              example: true
+            plm_response:
+              type: object
+              properties:
+                key:
+                  type: integer
+                  example: 105
+                addedCode:
+                  type: string
+                  example: 20251105-232719473
+                name:
+                  type: string
+                  example: NISH KUMAŞ SAN. VE TİC. LTD. ŞTİ. - NK1178,210 GSM,79%21%Pamuk
+            material_description:
+              type: string
+              example: NISH KUMAŞ SAN. VE TİC. LTD. ŞTİ. - NK1178
+        metadata:
+          type: object
+          properties:
+            document_id:
+              type: string
+              nullable: true
+            request_id:
+              type: string
+              nullable: true
+            timestamp:
+              type: string
+              format: date-time
+            processing_time_ms:
+              type: integer
+              example: 26350
+
+    FabricData:
+      type: object
+      properties:
+        Tedarikcisi:
+          type: string
+          example: NISH KUMAŞ SAN. VE TİC. LTD. ŞTİ.
+        Tedarikci_Kodu:
+          type: string
+          example: NK1178
+        Gramaj:
+          type: integer
+          example: 210
+        En:
+          type: integer
+          example: 190
+        Elyaf1Yuzde:
+          type: integer
+          example: 79
+        Elyaf1:
+          type: string
+          example: Polyester
+        Elyaf1Id:
+          type: integer
+          example: 13
+        Elyaf1Code:
+          type: string
+          example: PES
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: image_url parametresi gerekli
+        error_type:
+          type: string
+          example: ValidationError
+        metadata:
+          type: object
+          properties:
+            document_id:
+              type: string
+              nullable: true
+            request_id:
+              type: string
+              nullable: true
+            timestamp:
+              type: string
+              format: date-time
+            processing_time_ms:
+              type: integer
+
